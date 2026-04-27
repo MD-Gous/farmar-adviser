@@ -107,7 +107,22 @@ export default function DiagnosisPage() {
   const analyze = async () => {
     if (!image) { toast.error('Please upload an image first'); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 2500));
+    try {
+      // Try API first
+      const blob = await fetch(image).then(r => r.blob());
+      const formData = new FormData();
+      formData.append('image', blob, 'crop.jpg');
+      const apiRes = await fetch('/api/diagnose', { method: 'POST', body: formData });
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        setResult(data.diagnosis);
+        toast.success('Analysis complete!');
+        setLoading(false);
+        return;
+      }
+    } catch {}
+    // Fallback to local mock
+    await new Promise(r => setTimeout(r, 2000));
     const res = MOCK_RESULTS[Math.floor(Math.random() * MOCK_RESULTS.length)];
     setResult(res);
     setLoading(false);
